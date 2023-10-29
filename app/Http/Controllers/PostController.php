@@ -9,7 +9,13 @@ use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
-    // public function store(Request $request)
+    /**
+     * public function store(Request $request)
+     *
+     * php artisan make:controller PostController
+     * php artisan make:model Post
+     * php artisan make:request StorePostRequest
+     */
     public function store(StorePostRequest $request)
     {
         // StorePostRequest로 이동
