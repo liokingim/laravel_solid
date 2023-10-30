@@ -64,3 +64,132 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+
+### uuid
+장점: 여러 서버에 데이터베이스를 쉽게 배포가능
+단점: 인덱스를 4배 더 쓴다. 수동으로 작업하기 어렵다.
+
+테이블 생성
+
+php artisan make:model Post -m
+
+Model 생성
+Migration 생성
+
+migrations/2023_10_30_162708_create_posts_table.php
+$table->string('title');
+$table->string('body');
+
+칼럼 추가
+
+php artisan migrate
+
+php artisan tinker
+
+Post::create(['title' => 'post title', 'body' => 'post body']);
+
+Error  Class "Post" not found. 에러가 발생할 경우
+composer dump-autoload
+
+id를 삭제한 경우
+
+migrations/2023_10_30_162708_create_posts_table.php 에서 아래 항목 삭제
+$table->id();
+
+php artisan migrate:fresh
+
+Post::create(['title' => 'post title', 'body' => 'post body']); 를 실행할 경우
+id: 0, 으로 들어간다.
+
+계속 실행하여도 id: 0, 으로 들어간다.
+
+id를 삭제하기 위해서
+
+Post.php 클래스에 아래 추가
+protected $primaryKey = null;
+public $incrementing = false;
+
+exit
+php artisan tinker 재실행
+Post::create(['title' => 'post title', 'body' => 'post body']); 를 실행할 경우
+id: 0, 가 없다.
+
+uuid를 추가하기 위해서 migrations/2023_10_30_162708_create_posts_table.php 에서 아래 항목 추가
+$table->uuid('uuid')->unique();
+
+Post.php 클래스에 아래 수정
+protected $fillable = [
+    'uuid',
+    'title',
+    'body',
+];
+
+protected $primaryKey = 'uuid';
+protected $keyType = 'string';
+
+php artisan migrate:fresh
+
+php artisan tinker 재실행
+Post::create(['uuid' => Str::uuid(), 'title' => 'post title', 'body' => 'post body']);
+
+uuid: "5337294e-f1a8-4397-a0eb-b6d0434d1c5d", 확인 가능
+
+*** 모델 이벤트를 사용하여 uuid생성
+
+Post.php 클래스에 아래 수정
+    protected $fillable = [
+        // 'uuid',
+        'title',
+        'body',
+    ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = Str::uuid();
+            }
+        });
+    }
+
+php artisan tinker 재실행
+Post::create(['title' => 'post title', 'body' => 'post body']);
+
+uuid: "c63e6d5e-4ba3-428d-8aad-09f0498fe28a", 확인 가능
+
+다른 방법은 Post.php 클래스에 아래 수정
+        static::creating(function($model) {
+            if (empty($model->{$model->getKeyName()})) {
+                $model->{$model->getKeyName()} = Str::uuid();
+            }
+        });
+
+php artisan tinker 재실행
+Post::create(['title' => 'post title', 'body' => 'post body']);
+
+uuid: "8a471a88-74fd-4de1-8a0c-164e0b863a01", 확인 가능
+
+boot()메소드를 분리하기 위해서 trait를 사용한다.
+
+Traits/HasUuid.php 를 만든다.
+
+    protected static function bootHasUuid()
+    {
+        static::creating(function($model) {
+            if (empty($model->{$model->getKeyName()})) {
+                $model->{$model->getKeyName()} = Str::uuid();
+            }
+        });
+    }
+
+Post.php 클래스에 아래 수정
+use HasFactory, HasUuid;
+boot() 삭제
+
+php artisan tinker 재실행
+Post::create(['title' => 'post title', 'body' => 'post body']);
+
+uuid: "34d187bb-0aef-44ff-addc-7522d06fcedb", 확인 가능
