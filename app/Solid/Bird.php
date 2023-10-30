@@ -15,5 +15,7 @@ interface Bird
     public function walk();
 
     // 펭귄에서 필요없는 메소드가 된다.
+    // 없는 메소드를 펭귄에서 만들게 되면, 리턴값을 널을 주거나 예외처리하는 경우가 발생한다.
+    // 개발자로서 인터페이스를 만들때 잘 생각해보자.
     public function fly();
 }
